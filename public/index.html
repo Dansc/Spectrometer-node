@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+	<head>
+ 	<script src="http://d3js.org/d3.v3.min.js"></script>
+
+ 	<script
+  src="http://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+
+	<meta charset="utf-8">
+
+
+	<style> /* set the CSS */
+	body {
+	font: 12px Arial;
+	margin-left : 20;
+	}
+
+
+	.oldcircle{
+		fill-opacity: 0.05;
+	}
+	.label{
+	font: 15px Arial;
+	font-weight: bold;
+	}
+	.area {
+		fill: lightsteelblue;
+		stroke-width: 0;
+		fill-opacity: 0.2;
+	}
+	.axis path,
+	.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 2;
+    shape-rendering: crispEdges;
+	}
+
+
+
+	.input {
+		margin : 30px;
+		width : 250px;
+	}
+	</style>
+	</head>
+
+
+
+	<body>
+
+	<div class="input">
+	<div class="form-group">
+	<input type="text" class="form-control" id="experimentComment" placeholder="Experiment name">
+	</div>
+	<!-- Rounded switch -->
+	<div class="btn-group" data-toggle="buttons">
+	<label>
+	  <button type="button" class="btn btn-success" onclick="saveData()">
+	  Save data
+	 	</button>
+	</label>
+
+
+	<label >
+	  <button type="button" class="btn btn-danger" onclick="clearData()">
+	  Reset
+	 	</button>
+	</label>
+	</div>
+	<label id="savinglabel" style="display:none; color: green">saving...</label>
+	</div>
+
+	<script type="text/javascript">
+	 		var text;
+	 		var socket = new WebSocket("ws://localhost:8081");
+	 		var transition_time = 10;
+
+	 		// Margins, axis etc
+	 		var margin = {top: 40, right: 60, bottom: 40, left: 60},
+	    	width = 600 - margin.left - margin.right,
+		    height = 400 - margin.top - margin.bottom;
+
+
+	//	    var xscalebar = d3.scale.ordinal().rangeRoundBands([0, width], .05)
+
+			var xscale = d3.scale.linear()
+			.domain([0, 1])
+		    .range([0, width]);
+
+			var humidityScale = d3.scale.linear()
+			.domain([20, 90])
+		    .range([height, 0]);
+
+			var temperatureScale = d3.scale.linear()
+			.domain([20, 30])
+		    .range([height, 0]);
+
+		    var xAxis = d3.svg.axis()
+		    .scale(xscale)
+		    .tickSize(0)
+		    .tickPadding(6)
+		    .orient("bottom");
+
+			var humidityAxis = d3.svg.axis()
+		    .scale(humidityScale)
+		    .tickSize(2)
+		    .tickPadding(6)
+		    .orient("left");
+
+			var temperatureAxis = d3.svg.axis()
+		    .scale(temperatureScale)
+		    .tickSize(2)
+		    .tickPadding(6)
+		    .orient("right");
+
+
+			// HTML Stuff below
+
+	    	// HTML status texts
+	    	var socket_status = d3.select("body").append("div").text("Socket closed").style("color", "red");
+	    	var incoming = d3.select("body").append("div").text("Sensor reading: ");
+	    	var timestamp = d3.select("body").append("div").text("Timestamp: ");
+
+
+
+
+		    var svg = d3.select("body")
+		    	.append("svg")
+	    		.attr("width", width + margin.left + margin.right)
+	    		.attr("height", height + margin.top + margin.bottom)
+				.append("g")
+		    	.attr("transform",
+		    		"translate(" + margin.left + "," + margin.top + ")");
+
+
+
+		     // Add the X Axis
+		    svg.append("g")
+	       		 .attr("class", "x axis")
+	        	.attr("transform", "translate(0," + height + ")")
+	        	.call(xAxis);
+
+	        // Add the Y Axis
+	    	svg.append("g")
+	        .attr("class", "humidity axis")
+	        .call(humidityAxis);
+
+	    	svg.append("g")
+	        .attr("class", "temperature axis")
+	        .attr("transform", "translate(" + width + " ,0)")
+	        .call(temperatureAxis);
+
+	        // Add y axis label
+	        svg.append("text") // text label for the x axis .attr("x", 265 )
+	        .attr("class", "label")
+	        .attr("y",  height + margin.bottom)
+	        .attr("dy", "-0.1em")
+	        .attr("x",  width/2)
+	        .style("text-anchor", "middle")
+	        .text("Time (s)");
+
+
+	        svg.append("text")
+	        .attr("class", "label")
+	        .attr("transform", "rotate(-90)")
+	        .attr("y", 0 -margin.left)
+	        .attr("x",0 - (height / 2))
+	        .attr("dy", "1em")
+	        .style("text-anchor", "middle")
+	        .text("Humidity (%)");
+
+	        svg.append("text")
+	        .attr("class", "label")
+	        .attr("transform", "rotate(90)")
+	        .attr("y",  0-width - margin.left)
+	        .attr("x", (height / 2))
+	        .attr("dy", "1em")
+	        .style("text-anchor", "middle")
+	        .text("Temperature (C)");
+
+
+
+
+	      	// second (flat) line, used to temporarily store / hide not plotted lines
+        	// also allows the short animation of lines coming from below
+        	var templine = d3.svg.line()
+                .x(function(d) { return time_scale(d['date']);})
+                .y(function(d) { return y_scale(0);});
+
+			var humidityline = d3.svg.line()
+				.interpolate('monotone')
+			    .x(function(d) { return xscale(d.Time); })
+			    .y(function(d) { return humidityScale(d.Humidity); });
+
+			var temperatureline = d3.svg.line()
+				.interpolate('monotone')
+			    .x(function(d) { return xscale(d.Time); })
+			    .y(function(d) { return temperatureScale(d.Temperature); });
+
+
+			var densityline = d3.svg.line()
+				.interpolate('monotone')
+			    .x(function(d) { return xscale(d.Time); })
+			    .y(function(d) { return temperatureScale(d.density); });
+
+			var lines = {'humidity' : humidityline, 'temperature' : temperatureline};
+			var colors = {'humidity' : 'red', 'temperature' : 'blue', 'density' : 'green'};
+	        var data = [];
+
+
+	        get_line('humidity');
+			get_line('temperature');
+			get_line('density');
+
+			var radius = 3.5;
+
+			var legend =   svg.append('g')
+                .attr("class", "legend");
+
+            var legend_y0 = 50;
+            var legend_x0 = margin.left;
+            var line_space = 20;
+
+            var legendLines = legend.selectAll('line')
+                                .data(['humidity', 'temperature']);
+            legendLines.enter()
+                .append("line")
+                .style('opacity', 1.0)
+                .style("stroke", function (d) { return colors[d];})
+                .style('fill', 'none')
+                .attr('class', 'line legend')
+                .attr("x1", legend_x0-10)
+                .attr('x2', legend_x0+10)
+                .attr("y1", function (d, i) { return (i * line_space)+legend_y0;})
+                .attr("y2", function (d, i) { return (i * line_space)+legend_y0;})
+                .attr('stroke-width', '2px');
+
+            var legendText = legend.selectAll('text')
+                                .data(['humidity', 'temperature']);
+
+            legendText.enter()
+                .append("text")
+                .style('opacity', 1.0)
+                .attr('class', 'legend text')
+                .attr("x", 6*radius+legend_x0)
+                .attr("y", function (d, i) { return i * line_space+legend_y0+1.3*radius;})
+                .style('opacity', 1.0)
+                .text(function(d) {return d;})
+                .attr('fill', function(d){
+                    return colors[d];});
+
+
+
+			var save = false;
+			socket.onopen = openSocket;
+	 		socket.onmessage = processData;
+
+
+
+
+
+
+
+
+ 		function processData(result){
+			console.log(result);
+ 			// res = processResult(result);
+      //
+ 			// if (!res)
+ 			// {
+ 			// 	console.log("Error reading signal.");
+ 			// 	return;
+      //
+ 			// }
+      //
+ 			// incoming.html("Temperature reading: " + res.Temperature + "C, Humidity reading: " + res.Humidity +"%");
+ 			// timestamp.html("Timestamp: " + res.Time);
+      //
+ 			// data.push(res);
+      //
+ 			// if (save) {
+ 			// 	var comment = document.getElementById("experimentComment").value;
+ 			// 	if (!comment) {comment = "no"}
+ 			// 	socket.send("save:"+res.Temperature+","+res.Humidity+","+res.Time+","+comment);
+ 			// }
+      //
+ 			// if (data.length > 400){
+ 			// 	data.shift(0);
+ 			// }
+      //
+ 			// var scale_trans = svg.transition()
+ 			// // Update the scales
+ 			// xscale.domain(d3.extent(data, function(d) { return d.Time; })).nice();
+    	// 	xAxis.scale(xscale);
+    	// 	scale_trans.select(".x.axis").transition().duration(10).call(xAxis);
+      //
+      //
+ 			// humidityScale.domain(pad(d3.extent(data, function(d) { return d.Humidity; }), padding=5) ).nice();
+    	// 	humidityAxis.scale(humidityScale);
+    	// 	scale_trans.select(".humidity.axis").transition().duration(10).call(humidityAxis);
+      //
+ 			// temperatureScale.domain(pad(d3.extent(data, function(d) { return d.Temperature; }), padding=3) ).nice();
+    	// 	temperatureAxis.scale(temperatureScale);
+    	// 	scale_trans.select(".temperature.axis").transition().duration(10).call(temperatureAxis);
+      //
+      //
+      //
+    	// 	update(data);
+
+			}
+
+		function processResult(result)
+ 		{
+ 			var res = result.data.split(':');
+
+ 			// Check if message from board is ok and return data packet
+ 			if (res[0]=="OK"){
+ 				var time = parseFloat(result.timeStamp)/1000.;
+ 				var data_object = {Temperature: res[1].split(",")[1], Humidity: res[1].split(",")[0], density : res[1].split(",")[2], Time: time};
+ 				return data_object
+ 			}
+ 			else {
+ 				return
+ 			}
+ 		}
+
+ 		function openSocket()
+ 		{
+ 			socket_status.html("Socket open").style("color", "green");
+ 			socket.send("Hello server");
+ 		}
+
+		function update(data){
+
+			update_line('humidity');
+			update_line('temperature');
+			update_line('density');
+
+			}
+
+		function saveData(){
+			save = true;
+			d3.select("#savinglabel").style('display', 'inline');
+
+		}
+		function clearData(){
+			data = [];
+			save = false;
+			d3.select("#savinglabel").style('display', 'none');
+		}
+
+		function update_line(category){
+		    d3.select('body').transition()
+		    .duration(transition_time)
+		    .select('.line.'+category)
+		    .attr('d', lines[category](data));
+		}
+
+		function get_line(category){
+        // Create a new line object (and legend text) and return it
+
+            return svg
+                   .append('path')
+                   .attr("class", 'line'+' '+category)
+                   .attr('d', templine(data))
+                   .attr('opacity', 1.0)
+                   .attr('stroke', colors[category])
+                   .attr('fill-opacity', 0)
+                   .attr('stroke-width', '2px');
+                   //.attr("clip-path", "url(#clip)");
+            }
+
+
+		function pad(data, padding = 5){
+			data[0] = parseFloat(data[0]) - padding;
+			data[1] = parseFloat(data[1]) + padding;
+			return data;
+		}
+ 	</script>
+
+	</body>
+</html>

@@ -1,6 +1,6 @@
 
-var serialport = require('serialport');
-var parsers = serialport.parsers;
+const serialport = require('serialport');
+const Readline = serialport.parsers.Readline;
 
 var WebSocketServer = require('ws').Server;
 var fs = require("fs");
@@ -21,17 +21,17 @@ var wss = new WebSocketServer({port: SERVER_PORT}); // the WebSocketServer
 var connections = new Array; 	// list of connections to the WebSocketServer
 
 
-var SerialPort = serialport.SerialPort;
-portName = process.argv[2];
-
+//var SerialPort = serialport.SerialPort;
+const portName = process.argv[2];
 console.log(portName);
 
-var parser = new parsers.Readline({delimiter: '\r\n'}
-var myPort = new SerialPort(portName, {
-	baudRate: 115200,
-	// look for return and newline at the end of each data packet
-	parser: serialport.parsers.Readline('\n')
+const parser = new Readline({delimiter : "\r\n"});
+const myPort = new serialport(portName, {
+	'baudRate': 250000
 });
+
+console.log(myPort.baudRate);
+myPort.pipe(parser);
 
 myPort.on('open', showPortOpen);
 myPort.on('data', receiveSerialData);
@@ -56,12 +56,15 @@ function handleConnection(client){
 }
 
 function showPortOpen() {
-   console.log('port open. Data rate: ' + myPort.options.baudRate);
+   console.log('port open. Data rate: ' + myPort.baudRate);
 }
 
 function receiveSerialData(data) {
-   console.log(data);
-   saveLatestData(data);
+	var myString = JSON.stringify(data);
+	console.log(data.toString());
+console.log(data);
+
+   saveLatestData(myString);
 }
 
 
