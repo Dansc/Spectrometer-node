@@ -1,0 +1,17 @@
+{
+  "name": "spectr",
+  "version": "1.0.0",
+  "description": "Receiving data from spectrometer and distributing to websocket clients",
+  "main": "index.js",
+  "dependencies": {
+    "mongodb": "^2.2.33",
+    "serialport": "^4.0.5",
+    "ws": "^3.3.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -79,15 +79,15 @@ AS726X sensor;
 
 void setup() {
   sensor.begin();
-  Serial.begin(250000);
+//  Serial.begin(250000);
 }
 
 void loop() {
  sensor.takeMeasurements();
- Serial.print("R: ");
- Serial.print(sensor.getCalibratedR());
- Serial.println();
+// Serial.print("R: ");
+// Serial.print(sensor.getCalibratedR());
+// Serial.println();
 
-// sensor.printMeasurements();
+ sensor.printMeasurements();
 }
 

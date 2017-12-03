@@ -25,13 +25,14 @@ var connections = new Array; 	// list of connections to the WebSocketServer
 const portName = process.argv[2];
 console.log(portName);
 
-const parser = new Readline({delimiter : "\r\n"});
+//const parser = new Readline({delimiter : "\r\n"});
 const myPort = new serialport(portName, {
-	'baudRate': 250000
+	baudRate: 115200,
+	parser: serialport.parsers.readline('\r\n')
 });
 
-console.log(myPort.baudRate);
-myPort.pipe(parser);
+//console.log(myPort.baudRate);
+//myPort.pipe(parser);
 
 myPort.on('open', showPortOpen);
 myPort.on('data', receiveSerialData);
@@ -61,10 +62,8 @@ function showPortOpen() {
 
 function receiveSerialData(data) {
 	var myString = JSON.stringify(data);
-	console.log(data.toString());
-console.log(data);
-
-   saveLatestData(myString);
+	console.log(myString);
+  saveLatestData(myString);
 }
 
 
