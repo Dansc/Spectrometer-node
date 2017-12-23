@@ -77,17 +77,97 @@
 
 AS726X sensor;
 
+const int ledPin = 13;
+String incoming = "";
+String key = "";
+String value = "";
+String string = "";
+boolean measureBulb = false;
+
+unsigned long serialdata;
+int inbyte;
+
+
 void setup() {
   sensor.begin();
-//  Serial.begin(250000);
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
+  sensor.setIntegrationTime(255);
+  sensor.setGain(0);
 }
 
 void loop() {
- sensor.takeMeasurements();
-// Serial.print("R: ");
-// Serial.print(sensor.getCalibratedR());
-// Serial.println();
-
- sensor.printMeasurements();
+  readSerial();
+  
+  if (measureBulb == false){
+   sensor.takeMeasurements();
+  }
+  if (measureBulb == true){
+    sensor.takeMeasurementsWithBulb();
+  }
+  
+   sensor.printMeasurements();
 }
+
+
+void readSerial(){
+
+   while (Serial.available()) {          
+      digitalWrite(ledPin, LOW); //LED on while receiving
+      incoming = Serial.readStringUntil('\n');
+      while (incoming.indexOf(":") >0){
+          key = incoming.substring(0, incoming.indexOf(":"));
+          value = incoming.substring(incoming.indexOf(":")+1, incoming.indexOf(";"));
+          if (incoming.indexOf(";") >0) {
+            incoming = incoming.substring(incoming.indexOf(";")+1, incoming.length());
+          }
+          else {
+            incoming = "";
+          }
+
+      if (key=="bulb"){
+        if (value=="on"){
+           measureBulb = true;
+        }
+        if (value=="off"){
+          measureBulb = false;
+        }
+      }
+
+      if (key=="gain"){
+         sensor.setGain(value.toInt());
+      }
+      
+      if (key=="blueLED"){
+        if (value=="on"){
+            sensor.enableIndicator();
+        }
+        if (value=="off"){
+            sensor.disableIndicator();
+        }
+      }
+      if (key=="current"){
+         sensor.setBulbCurrent(value.toInt());
+      }
+      
+      if (key=="tc"){
+         sensor.setIntegrationTime(value.toInt());
+      }
+      
+      }
+      
+     }
+  
+  
+      
+  if (incoming == "withBulb"){
+    measureBulb = true;
+  }
+  if (incoming == "noBulb"){
+    measureBulb = false;
+  }
+  digitalWrite(ledPin, LOW); //LED off while not receiving
+  }
+
+
 

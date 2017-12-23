@@ -5,17 +5,6 @@ const Readline = serialport.parsers.Readline;
 var WebSocketServer = require('ws').Server;
 var fs = require("fs");
 
-// Require mongodb drivers
-var mongodb = require('mongodb');
-
-// Make a mongoclient interface
-var MongoClient = mongodb.MongoClient;
-
-// Connection URL. This is where your mongodb server is running.
-var url = 'mongodb://localhost:27017/arduino';
-
-
-
 var SERVER_PORT = 8081; 	// port number for WebSocketServer
 var wss = new WebSocketServer({port: SERVER_PORT}); // the WebSocketServer
 var connections = new Array; 	// list of connections to the WebSocketServer
@@ -30,9 +19,6 @@ const myPort = new serialport(portName, {
 	baudRate: 115200,
 	parser: serialport.parsers.readline('\r\n')
 });
-
-//console.log(myPort.baudRate);
-//myPort.pipe(parser);
 
 myPort.on('open', showPortOpen);
 myPort.on('data', receiveSerialData);
@@ -70,8 +56,8 @@ function receiveSerialData(data) {
 function sendToSerial(data){
 
 	// if a message is meant for arduino, see below
-	// console.log("sending to serial: " + data);
-	// myPort.write(data);
+	 console.log("sending to serial: " + data);
+	 myPort.write(data);
 
 }
 
@@ -96,7 +82,7 @@ function showPortClose() {
 }
 
 function showError(error) {
-   //list_ports;
+   list_ports();
    console.log('Serial port error: ' + error);
 
 }
